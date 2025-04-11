@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "LjoRX0lH2giHt8dMINGHG1e3Hcbwfkt7q/Y3tVszGp8=",
+  "Source": "OrderServer",
+  "BasePath": "_content/OrderServer",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

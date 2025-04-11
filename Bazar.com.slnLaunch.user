@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "Bazar.com\\CatalogService\\CatalogServer.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Bazar.com\\OrderService\\OrderServer.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

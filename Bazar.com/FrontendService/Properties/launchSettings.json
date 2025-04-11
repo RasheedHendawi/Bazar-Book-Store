@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "UserAction": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

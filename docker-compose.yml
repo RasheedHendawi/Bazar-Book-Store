@@ -1,0 +1,39 @@
+services:
+  catalog-service:
+    build:
+      context: ./Bazar.com/CatalogService
+    container_name: catalog-service
+    volumes:
+      - ./CatalogService/Data:/app/Data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+
+  order-service:
+    build:
+      context: ./Bazar.com/OrderService
+    container_name: order-service
+    volumes:
+      - ./OrderService/Data:/app/Data
+    depends_on:
+      - catalog-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - CATALOG_SERVICE_URL=http://catalog-service:8080
+
+  frontend-service:
+    build: 
+      context: ./Bazar.com/FrontendService
+    container_name: frontend-service
+    stdin_open: true
+    tty: true
+    ports:
+     - "8082:8080"
+    depends_on:
+      - catalog-service
+      - order-service
+    environment:
+      - ORDER_SERVICE_URL=http://order-service:8080
+      - CATALOG_SERVICE_URL=http://catalog-service:8080
+    command: ["dotnet", "UserAction.dll"]
