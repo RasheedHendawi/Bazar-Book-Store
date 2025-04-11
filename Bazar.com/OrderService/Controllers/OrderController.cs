@@ -15,8 +15,17 @@ namespace OrderServer.Controllers
         [HttpPost("purchase/{itemNumber}")]
         public async Task<IActionResult> Purchase(int itemNumber)
         {
-            var result = await _orderService.PurchaseAsync(itemNumber);
-            return Ok(new { message = result });
+            try
+            {
+                var result = await _orderService.PurchaseAsync(itemNumber);
+                return Ok(new { message = result });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Controller caught error: {ex.Message}");
+
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

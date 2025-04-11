@@ -4,7 +4,7 @@ services:
       context: ./Bazar.com/CatalogService
     container_name: catalog-service
     volumes:
-      - ./CatalogService/Data:/app/Data
+      - ./Bazar.com/CatalogService/Data:/app/Data
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
@@ -15,7 +15,7 @@ services:
       context: ./Bazar.com/OrderService
     container_name: order-service
     volumes:
-      - ./OrderService/Data:/app/Data
+      - ./Bazar.com/OrderService/Data:/app/Data
     depends_on:
       - catalog-service
     environment:

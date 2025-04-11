@@ -9,10 +9,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{2306522E-FEE4-4C41-B4C3-3A2617BE477A}|docker-compose.dcproj|c:\\users\\rrash\\desktop\\bazar-dos\\docker-compose.yml||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{2306522E-FEE4-4C41-B4C3-3A2617BE477A}|docker-compose.dcproj|solutionrelative:docker-compose.yml||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{345E63DC-D511-4E65-8627-565B991F9B4C}|Bazar.com\\OrderService\\OrderServer.csproj|c:\\users\\rrash\\desktop\\bazar-dos\\bazar.com\\orderservice\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{345E63DC-D511-4E65-8627-565B991F9B4C}|Bazar.com\\OrderService\\OrderServer.csproj|solutionrelative:bazar.com\\orderservice\\controllers\\ordercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,34 +18,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 9,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "OrderController.cs",
-              "DocumentMoniker": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\Bazar.com\\OrderService\\Controllers\\OrderController.cs",
-              "RelativeDocumentMoniker": "Bazar.com\\OrderService\\Controllers\\OrderController.cs",
-              "ToolTip": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\Bazar.com\\OrderService\\Controllers\\OrderController.cs",
-              "RelativeToolTip": "Bazar.com\\OrderService\\Controllers\\OrderController.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABAAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-10T23:57:53.353Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\Bazar.com\\FrontendService\\Program.cs",
-              "RelativeDocumentMoniker": "Bazar.com\\FrontendService\\Program.cs",
-              "ToolTip": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\Bazar.com\\FrontendService\\Program.cs",
-              "RelativeToolTip": "Bazar.com\\FrontendService\\Program.cs",
-              "ViewState": "AgIAABsAAAAAAAAAAAAAACIAAABJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-10T23:24:26.108Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
@@ -88,15 +58,28 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\Bazar.com\\FrontendService\\Program.cs",
+              "RelativeDocumentMoniker": "Bazar.com\\FrontendService\\Program.cs",
+              "ToolTip": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\Bazar.com\\FrontendService\\Program.cs",
+              "RelativeToolTip": "Bazar.com\\FrontendService\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHcAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-11T20:05:46.778Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
               "Title": "docker-compose.yml",
               "DocumentMoniker": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\docker-compose.yml",
               "RelativeDocumentMoniker": "docker-compose.yml",
               "ToolTip": "C:\\Users\\rrash\\Desktop\\Bazar-Dos\\docker-compose.yml",
               "RelativeToolTip": "docker-compose.yml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAALAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003775|",
-              "WhenOpened": "2025-04-10T23:18:57.279Z",
+              "WhenOpened": "2025-04-11T20:01:55.547Z",
               "EditorCaption": ""
             }
           ]

@@ -29,7 +29,7 @@ namespace CatalogServer.Controllers
             {
                 return NotFound();
             }
-            return Ok(new { book.Title, book.Quantity, book.Price });
+            return Ok(new { book.Id ,book.Title, book.Quantity, book.Price });
         }
         [HttpGet("info")]
         public IActionResult GetAllBooks()
