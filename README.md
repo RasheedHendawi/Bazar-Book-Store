@@ -50,21 +50,20 @@ Now you will see the main menue like this
 ```
 ## API Reference
 * Catalog Service
-```swift
-GET /catalog/info — List all books
 
-GET /catalog/info/{id} — Get book by ID
+| Method | Endpoint | Usage|
+|-------|----------- |---|
+|  GET    | /catalog/info |List all books|
+|  Get    | /catalog/info/{id}     |Get book by ID|
+|  Post  | /catalog/update/decrement/{id}       |Decrement stock|
+|  Get   | /catalog/search/{topic}     |Search by topic|
+|  Post  | /order/purchase/{itemNumber}|Purchase an item|
 
-POST /catalog/update/decrement/{id} — Decrement stock
-
-GET /catalog/search/{topic} — Search by topic
-
-Post /order/purchase/{ItemNumber} — Purchase an item
-```
 * Order Service
-```swift
-POST /order/purchase/{id} — Purchase book by ID
-```
+
+| Method | Endpoint | Usage|
+|-------|----------- |---|
+|  Post   | /order/purchase/{id} |Purchase book by ID|
 ## TODO
 - Add authentication
 
