@@ -26,5 +26,26 @@
     "Topic": "undergraduate school",
     "Quantity": 0,
     "Price": 25
+  },
+  {
+    "Id": 5,
+    "Title": "How to finish Project 3 on time",
+    "Topic": "undergraduate school",
+    "Quantity": 6,
+    "Price": 35
+  },
+  {
+    "Id": 6,
+    "Title": "Why theory classes are so hard.",
+    "Topic": "undergraduate school",
+    "Quantity": 12,
+    "Price": 55
+  },
+  {
+    "Id": 7,
+    "Title": "Spring in the Pioneer Valley",
+    "Topic": "undergraduate school",
+    "Quantity": 10,
+    "Price": 20
   }
 ]
