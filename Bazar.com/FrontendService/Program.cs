@@ -63,13 +63,9 @@ while (true)
         Console.Write("Enter Book ID to purchase: ");
         if (!int.TryParse(Console.ReadLine(), out var bookId)) continue;
 
-        //Console.Write("Enter Quantity: ");
-        //if (!int.TryParse(Console.ReadLine(), out var qty)) continue;
-
         var order = new
         {
             ItemNumber = bookId,
-            //Quantity = qty
         };
 
         var fullUri = $"{orderUrl}/order/purchase/{bookId}";
