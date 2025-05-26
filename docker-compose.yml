@@ -1,39 +1,66 @@
 services:
-  catalog-service:
+
+  catalog-1:
     build:
       context: ./Bazar.com/CatalogService
-    container_name: catalog-service
+    container_name: catalog-1
     volumes:
       - ./Bazar.com/CatalogService/Data:/app/Data
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
 
-  order-service:
+
+  catalog-2:
+    build:
+      context: ./Bazar.com/CatalogService
+    container_name: catalog-2
+    volumes:
+      - ./Bazar.com/CatalogService/Data:/app/Data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+
+  order-1:
     build:
       context: ./Bazar.com/OrderService
-    container_name: order-service
+    container_name: order-1
     volumes:
       - ./Bazar.com/OrderService/Data:/app/Data
     depends_on:
-      - catalog-service
+      - catalog-1
+      - catalog-2
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - CATALOG_SERVICE_URL=http://catalog-service:8080
+      - CATALOG_SERVICE_URL=http://catalog-1:8080
+
+  order-2:
+    build:
+      context: ./Bazar.com/OrderService
+    container_name: order-2
+    volumes:
+      - ./Bazar.com/OrderService/Data:/app/Data
+    depends_on:
+      - catalog-1
+      - catalog-2
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - CATALOG_SERVICE_URL=http://catalog-2:8080
+
 
   frontend-service:
-    build: 
+    build:
       context: ./Bazar.com/FrontendService
     container_name: frontend-service
     stdin_open: true
     tty: true
     ports:
-     - "8082:8080"
+      - "8082:8080"  
     depends_on:
-      - catalog-service
-      - order-service
+      - catalog-1
+      - catalog-2
+      - order-1
+      - order-2
     environment:
-      - ORDER_SERVICE_URL=http://order-service:8080
-      - CATALOG_SERVICE_URL=http://catalog-service:8080
+      - ORDER_SERVICE_URL=http://order-1:8080,http://order-2:8080
+      - CATALOG_SERVICE_URL=http://catalog-1:8080,http://catalog-2:8080
     command: ["dotnet", "UserAction.dll"]
