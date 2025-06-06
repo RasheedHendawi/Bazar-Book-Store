@@ -5,47 +5,44 @@ services:
       context: ./Bazar.com/CatalogService
     container_name: catalog-1
     volumes:
-      - ./Bazar.com/CatalogService/Data:/app/Data
+      - ./Bazar.com/CatalogService/Data1:/app/Data
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-
 
   catalog-2:
     build:
       context: ./Bazar.com/CatalogService
     container_name: catalog-2
     volumes:
-      - ./Bazar.com/CatalogService/Data:/app/Data
+      - ./Bazar.com/CatalogService/Data2:/app/Data
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-
 
   order-1:
     build:
       context: ./Bazar.com/OrderService
     container_name: order-1
     volumes:
-      - ./Bazar.com/OrderService/Data:/app/Data
+      - ./Bazar.com/OrderService/Data1:/app/Data
     depends_on:
       - catalog-1
       - catalog-2
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - CATALOG_SERVICE_URL=http://catalog-1:8080
+      - CATALOG_SERVICE_URL=http://catalog-1:8080/
 
   order-2:
     build:
       context: ./Bazar.com/OrderService
     container_name: order-2
     volumes:
-      - ./Bazar.com/OrderService/Data:/app/Data
+      - ./Bazar.com/OrderService/Data2:/app/Data
     depends_on:
       - catalog-1
       - catalog-2
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - CATALOG_SERVICE_URL=http://catalog-2:8080
-
+      - CATALOG_SERVICE_URL=http://catalog-2:8080/
 
   frontend-service:
     build:
@@ -54,7 +51,7 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - "8082:8080"  
+      - "8082:8080"
     depends_on:
       - catalog-1
       - catalog-2
