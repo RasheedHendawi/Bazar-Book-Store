@@ -1,113 +1,196 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 
-Console.WriteLine("📚 Welcome to the Online Bookstore!");
-
-var catalogUrl = "http://catalog-service:8080";
-var orderUrl = "http://order-service:8080";
+var infoCache = new Dictionary<int, (Book Data, DateTime CachedAt)>();
+var searchCache = new Dictionary<string, (List<BookSearchResult> Data, DateTime CachedAt)>();
+TimeSpan cacheTtl = TimeSpan.FromSeconds(60);
 
 var httpClient = new HttpClient();
 
-while (true) {
-  Console.WriteLine("\n1. View All Catalog Items");
-  Console.WriteLine("2. View Catalog Item");
-  Console.WriteLine("3. Purchase Book");
-  Console.WriteLine("4. Search Book Topic");
-  Console.WriteLine("5. Exit");
-  Console.Write("Select an option: ");
-  var input = Console.ReadLine();
-  if (input == "1") {
-    var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/info");
-    var json = await resp.Content.ReadAsStringAsync();
-    var options =
-        new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-    var books = JsonSerializer.Deserialize<List<Book>>(json, options);
+var catalogUrls = (Environment.GetEnvironmentVariable("CATALOG_SERVICE_URL") ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries);
+var orderUrls = (Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-    Console.WriteLine("\n📚 View All Books in the Catalog:");
-    Console.WriteLine("{0,-40} {1,10} {2,10}", "Title", "Price", "Quantity");
-    Console.WriteLine(new string('-', 70));
+int catalogIndex = 0, orderIndex = 0;
+async Task<(string? Url, int NewIndex)> NextHealthyUrl(string[] urls, int startIdx, string healthPath = "/catalog/health")
+{
+    
+    if (urls.Length == 0) return (null, startIdx);
+    int idx = startIdx;
 
-    foreach (var b in books!) {
-      Console.WriteLine("{0,-40} {1,10:C} {2,10}", Truncate(b.Title, 40),
-                        b.Price, b.Quantity);
-    }
-  } else if (input == "2") {
-    string ? userItem;
-    Console.Write("\nEnter the ID of item: ");
-    userItem = Console.ReadLine();
-    if (string.IsNullOrEmpty(userItem)) {
-      Console.WriteLine("Invalid input. Please enter a valid item number.");
-      continue;
-    }
-    if (!int.TryParse(userItem, out var itemNumber)) {
-      Console.WriteLine(
-          "Invalid input. Please enter a valid item number. (integer)");
-      continue;
-    }
-    var resp =
-        await httpClient.GetAsync($"{catalogUrl}/catalog/info/{itemNumber}");
-    var json = await resp.Content.ReadAsStringAsync();
-    var options =
-        new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-    var book = JsonSerializer.Deserialize<Book>(json, options);
-    Console.WriteLine($"\nThe Book Requested with ID {itemNumber}:");
-    Console.WriteLine(
-        $"Book_ID : {book.Id} Book: {book.Title} - Price: ${book.Price} - Quantity: {book.Quantity}");
-  } else if (input == "3") {
-    Console.Write("Enter Book ID to purchase: ");
-    if (!int.TryParse(Console.ReadLine(), out var bookId))
-      continue;
+    for (int i = 0; i < urls.Length; i++)
+    {
+        var url = urls[idx];
+        idx = (idx + 1) % urls.Length;
 
-
-        var order = new
+        try
         {
-            ItemNumber = bookId,
-        };
-
-    var fullUri = $"{orderUrl}/order/purchase/{bookId}";
-    var orderResp = await httpClient.PostAsync(fullUri, null);
-
-    if (orderResp.IsSuccessStatusCode) {
-      Console.WriteLine($"📦 {orderResp.StatusCode}");
-      Console.WriteLine("✅  Order placed successfully!");
-    } else {
-      Console.WriteLine("❌  Failed to place order.");
-    }
-  } else if (input == "4") {
-    Console.Write("🔍 Enter topic to search: ");
-    var topic = Console.ReadLine();
-
-    var response =
-        await httpClient.GetAsync($"{catalogUrl}/catalog/search/{topic}");
-    if (!response.IsSuccessStatusCode) {
-      Console.WriteLine("❌ Failed to search catalog.");
-      return;
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+            var resp = await httpClient.GetAsync($"{url}{healthPath}", cts.Token);
+            if (resp.IsSuccessStatusCode)
+                return (url, idx);
+        }
+        catch
+        {
+            // Ignore failure and try next
+        }
     }
 
-    var json = await response.Content.ReadAsStringAsync();
-    var options =
-        new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-    var results =
-        JsonSerializer.Deserialize<List<BookSearchResult>>(json, options);
-
-    if (results == null || results.Count == 0) {
-      Console.WriteLine($"😕 No books found under the topic \"{topic}\".");
-    } else {
-      Console.WriteLine($"\n📚 Books found for topic \"{topic}\":");
-      foreach (var b in results) {
-        Console.WriteLine($"🔸 ID: {b.Id}, Title: {b.Title}");
-      }
-    }
-  } else if (input == "5") {
-    break;
-  } else {
-    Console.WriteLine("Invalid option.");
-  }
+    return (null, startIdx);
 }
-string Truncate(string value, int maxLength) {
-  return value.Length <= maxLength
-             ? value
-             : value.Substring(0, maxLength - 3) + "...";
+
+
+
+Console.WriteLine("📚\tWelcome to the Online Bookstore! (with RR + cache)\n");
+
+while (true)
+{
+    Console.WriteLine("1. View All Catalog Items");
+    Console.WriteLine("2. View Catalog Item");
+    Console.WriteLine("3. Purchase Book");
+    Console.WriteLine("4. Search Book Topic");
+    Console.WriteLine("5. Exit");
+    Console.Write("Select an option: ");
+    var input = Console.ReadLine();
+    if (input == "1")
+    {
+        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex);
+        if (catalogUrl == null)
+        {
+            Console.WriteLine("❌ All catalog services are down.");
+            continue;
+        }
+        catalogIndex = newCatalogIndex;
+        Console.WriteLine($"testing first{catalogUrl}");
+        var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/info");
+        var books = JsonSerializer.Deserialize<List<Book>>(await resp.Content.ReadAsStringAsync(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        Console.WriteLine("\n📚\t\tView All Books:");
+        Console.WriteLine("{0,-40} {1,10} {2,10}", "Title", "Price", "Quantity");
+        Console.WriteLine(new string('-', 70));
+        foreach (var b in books)
+            Console.WriteLine("{0,-40} {1,10:C} {2,10}", Truncate(b.Title, 40), b.Price, b.Quantity);
+        Console.WriteLine("\n");
+    }
+    else if (input == "2")
+    {
+        Console.Write("\nEnter item ID: ");
+        if (!int.TryParse(Console.ReadLine(), out var id)) continue;
+
+        if (infoCache.TryGetValue(id, out var entry) &&
+            DateTime.UtcNow - entry.CachedAt < cacheTtl)
+        {
+            PrintBook(entry.Data);
+            continue;
+        }
+
+        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex);
+        if (catalogUrl == null)
+        {
+            Console.WriteLine("❌ All catalog services are down.");
+            continue;
+        }
+        catalogIndex = newCatalogIndex;
+
+        var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/info/{id}");
+        if (!resp.IsSuccessStatusCode) { Console.WriteLine("❌ Not found."); continue; }
+        var book = JsonSerializer.Deserialize<Book>(await resp.Content.ReadAsStringAsync(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        infoCache[id] = (book, DateTime.UtcNow);
+        PrintBook(book);
+    }
+    else if (input == "3")
+    {
+        Console.Write("Enter Book ID to purchase: ");
+        if (!int.TryParse(Console.ReadLine(), out var id)) continue;
+
+        var (orderUrl, newOrderIndex) = await NextHealthyUrl(orderUrls, orderIndex);
+        if (orderUrl == null)
+        {
+            Console.WriteLine("❌ All order services are down.");
+            continue;
+        }
+        orderIndex = newOrderIndex;
+
+        var resp = await httpClient.PostAsync($"{orderUrl}/order/purchase/{id}", null);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            Console.WriteLine("✅ Order placed!");
+
+            infoCache.Remove(id);
+            searchCache.Clear();
+
+            // ✅ Sync to other catalog replicas
+            foreach (var url in catalogUrls.Where(url => !orderUrl.Contains(url)))
+            {
+                try
+                {
+                    await httpClient.PostAsync($"{url}/catalog/sync/decrement/{id}", null);
+                    Console.WriteLine($"🔄 Synced decrement to: {url}");
+                }
+                catch
+                {
+                    Console.WriteLine($"⚠️ Failed to sync with {url}");
+                }
+            }
+        }
+        else
+        {
+            var err = await resp.Content.ReadAsStringAsync();
+            Console.WriteLine($"❌ {err}");
+        }
+    }
+    else if (input == "4")
+    {
+        Console.Write("Enter topic: ");
+        var topic = Console.ReadLine() ?? "";
+
+
+        if (searchCache.TryGetValue(topic, out var sEntry) &&
+            DateTime.UtcNow - sEntry.CachedAt < cacheTtl)
+        {
+            PrintSearch(sEntry.Data);
+            continue;
+        }
+
+        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex);
+        if (catalogUrl == null)
+        {
+            Console.WriteLine("❌ All catalog services are down.");
+            continue;
+        }
+        catalogIndex = newCatalogIndex;
+
+        var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/search/{topic}");
+        var results = JsonSerializer.Deserialize<List<BookSearchResult>>(await resp.Content.ReadAsStringAsync(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        if (results.Count == 0)
+            Console.WriteLine($"😕 No books under \"{topic}\".");
+        else
+        {
+
+            searchCache[topic] = (results, DateTime.UtcNow);
+            PrintSearch(results);
+        }
+    }
+    else if (input == "5") break;
+    else Console.WriteLine("Invalid. Try 1–5.");
 }
+
+void PrintBook(Book b) =>
+    Console.WriteLine($"\n[ID:{b.Id}] {b.Title} — ${b.Price} — Qty: {b.Quantity}\n");
+
+void PrintSearch(IEnumerable<BookSearchResult> list)
+{
+    Console.WriteLine("\n🔍 Search results:");
+    foreach (var r in list)
+        Console.WriteLine($"• [{r.Id}] {r.Title}");
+    Console.WriteLine();
+}
+
+string Truncate(string v, int len) =>
+    v.Length <= len ? v : v[..(len - 3)] + "...";
+
 record Book(int Id, string Title, decimal Price, int Quantity);
 record BookSearchResult(int Id, string Title);

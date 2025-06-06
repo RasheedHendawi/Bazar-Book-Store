@@ -12,6 +12,8 @@ namespace OrderServer.Controllers
         {
             _orderService = orderService;
         }
+        [HttpGet("health")]
+        public IActionResult Health() => Ok(new { status = "Healthy", time = DateTime.UtcNow });
         [HttpPost("purchase/{itemNumber}")]
         public async Task<IActionResult> Purchase(int itemNumber)
         {

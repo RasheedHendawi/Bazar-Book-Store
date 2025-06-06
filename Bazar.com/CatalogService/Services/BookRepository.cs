@@ -28,6 +28,9 @@ namespace CatalogServer.Services
             new Book { Id = 2, Title = "RPCs for Noobs", Topic = "distributed systems", Quantity = 3, Price = 50 },
             new Book { Id = 3, Title = "Xen and the Art of Surviving Undergraduate School", Topic = "undergraduate school", Quantity = 7, Price = 30 },
             new Book { Id = 4, Title = "Cooking for the Impatient Undergrad", Topic = "undergraduate school", Quantity = 4, Price = 25 },
+            new Book { Id = 5, Title = "How to finish Project 3 on time", Topic = "undergraduate school", Quantity = 6, Price = 35 },
+            new Book { Id = 6, Title = "Why theory classes are so hard.", Topic = "undergraduate school", Quantity = 12, Price = 55 },
+            new Book { Id = 7, Title = "Spring in the Pioneer Valley", Topic = "undergraduate school", Quantity = 10, Price = 20 },
         };
             SaveChanges();
         }
