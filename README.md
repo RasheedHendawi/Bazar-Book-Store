@@ -65,7 +65,7 @@ Now you will see the main menue like this
 |-------|----------- |---|
 |  Post   | /order/purchase/{id} |Purchase book by ID|
 
-*Replicas-Requirement 
+* Replicas-Requirement 
 | Method | Endpoint | Usage|
 |-------|----------- |---|
 |  GET   | /{Service-Name}/sync/{Id} |Sync the data after writing on any|
