@@ -64,6 +64,13 @@ Now you will see the main menue like this
 | Method | Endpoint | Usage|
 |-------|----------- |---|
 |  Post   | /order/purchase/{id} |Purchase book by ID|
+
+* Replicas-Requirement
+
+| Method | Endpoint | Usage|
+|-------|----------- |---|
+|  GET    | /{service-name}/sync/{id} |Sync the data|
+
 ## TODO
 - Add authentication
 
