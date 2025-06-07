@@ -1,20 +1,23 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
+using UserAction.Utilites;
 
 var infoCache = new Dictionary<int, (Book Data, DateTime CachedAt)>();
 var searchCache = new Dictionary<string, (List<BookSearchResult> Data, DateTime CachedAt)>();
-TimeSpan cacheTtl = TimeSpan.FromSeconds(60);
+TimeSpan cacheTtl = TimeSpan.FromDays(1);
 
 var httpClient = new HttpClient();
-
+const string CATALOGNAME = "/catalog";
+const string ORDERNAME = "/order";
 var catalogUrls = (Environment.GetEnvironmentVariable("CATALOG_SERVICE_URL") ?? "")
     .Split(',', StringSplitOptions.RemoveEmptyEntries);
 var orderUrls = (Environment.GetEnvironmentVariable("ORDER_SERVICE_URL") ?? "")
     .Split(',', StringSplitOptions.RemoveEmptyEntries);
 
 int catalogIndex = 0, orderIndex = 0;
-async Task<(string? Url, int NewIndex)> NextHealthyUrl(string[] urls, int startIdx, string healthPath = "/catalog/health")
+async Task<(string? Url, int NewIndex)> NextHealthyUrl(string[] urls, int startIdx, string serverType)
 {
-    
+    string healthPath = serverType + "/health";
     if (urls.Length == 0) return (null, startIdx);
     int idx = startIdx;
 
@@ -39,8 +42,6 @@ async Task<(string? Url, int NewIndex)> NextHealthyUrl(string[] urls, int startI
     return (null, startIdx);
 }
 
-
-
 Console.WriteLine("📚\tWelcome to the Online Bookstore! (with RR + cache)\n");
 
 while (true)
@@ -54,14 +55,13 @@ while (true)
     var input = Console.ReadLine();
     if (input == "1")
     {
-        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex);
+        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex,CATALOGNAME);
         if (catalogUrl == null)
         {
             Console.WriteLine("❌ All catalog services are down.");
             continue;
         }
         catalogIndex = newCatalogIndex;
-        Console.WriteLine($"testing first{catalogUrl}");
         var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/info");
         var books = JsonSerializer.Deserialize<List<Book>>(await resp.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
@@ -77,34 +77,41 @@ while (true)
         Console.Write("\nEnter item ID: ");
         if (!int.TryParse(Console.ReadLine(), out var id)) continue;
 
-        if (infoCache.TryGetValue(id, out var entry) &&
-            DateTime.UtcNow - entry.CachedAt < cacheTtl)
+        using (new RequestTimer(infoCache.ContainsKey(id) ? "Cache HIT (Info)" : "Cache MISS (Info)"))
         {
-            PrintBook(entry.Data);
-            continue;
-        }
+            if (infoCache.TryGetValue(id, out var entry) &&
+                DateTime.UtcNow - entry.CachedAt < cacheTtl)
+            {
+                Console.WriteLine("🔄\tUsing cached data:");
+                PrintBook(entry.Data);
+                continue;
+            }
 
-        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex);
-        if (catalogUrl == null)
-        {
-            Console.WriteLine("❌ All catalog services are down.");
-            continue;
-        }
-        catalogIndex = newCatalogIndex;
+            var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex, CATALOGNAME);
+            if (catalogUrl == null)
+            {
+                Console.WriteLine("❌ All catalog services are down.");
+                continue;
+            }
+            catalogIndex = newCatalogIndex;
 
-        var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/info/{id}");
-        if (!resp.IsSuccessStatusCode) { Console.WriteLine("❌ Not found."); continue; }
-        var book = JsonSerializer.Deserialize<Book>(await resp.Content.ReadAsStringAsync(),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-        infoCache[id] = (book, DateTime.UtcNow);
-        PrintBook(book);
+            var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/info/{id}");
+            if (!resp.IsSuccessStatusCode) { Console.WriteLine("❌ Not found."); continue; }
+
+            var book = JsonSerializer.Deserialize<Book>(await resp.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+            infoCache[id] = (book, DateTime.UtcNow);
+            Console.WriteLine("🔄\tCached data miss:");
+            PrintBook(book);
+        }
     }
     else if (input == "3")
     {
         Console.Write("Enter Book ID to purchase: ");
         if (!int.TryParse(Console.ReadLine(), out var id)) continue;
 
-        var (orderUrl, newOrderIndex) = await NextHealthyUrl(orderUrls, orderIndex);
+        var (orderUrl, newOrderIndex) = await NextHealthyUrl(orderUrls, orderIndex, ORDERNAME);
         if (orderUrl == null)
         {
             Console.WriteLine("❌ All order services are down.");
@@ -121,9 +128,9 @@ while (true)
             infoCache.Remove(id);
             searchCache.Clear();
 
-            // ✅ Sync to other catalog replicas
-            foreach (var url in catalogUrls.Where(url => !orderUrl.Contains(url)))
+            for (int i = 1; i < catalogUrls.Length; i++)
             {
+                var url = catalogUrls[i];
                 try
                 {
                     await httpClient.PostAsync($"{url}/catalog/sync/decrement/{id}", null);
@@ -134,11 +141,12 @@ while (true)
                     Console.WriteLine($"⚠️ Failed to sync with {url}");
                 }
             }
+
         }
         else
         {
             var err = await resp.Content.ReadAsStringAsync();
-            Console.WriteLine($"❌ {err}");
+            Console.WriteLine($"❌  {err}");
         }
     }
     else if (input == "4")
@@ -146,32 +154,34 @@ while (true)
         Console.Write("Enter topic: ");
         var topic = Console.ReadLine() ?? "";
 
-
-        if (searchCache.TryGetValue(topic, out var sEntry) &&
-            DateTime.UtcNow - sEntry.CachedAt < cacheTtl)
+        using (new RequestTimer(searchCache.ContainsKey(topic) ? "Cache HIT (Search)" : "Cache MISS (Search)"))
         {
-            PrintSearch(sEntry.Data);
-            continue;
-        }
+            if (searchCache.TryGetValue(topic, out var sEntry) &&
+                DateTime.UtcNow - sEntry.CachedAt < cacheTtl)
+            {
+                PrintSearch(sEntry.Data);
+                continue;
+            }
 
-        var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex);
-        if (catalogUrl == null)
-        {
-            Console.WriteLine("❌ All catalog services are down.");
-            continue;
-        }
-        catalogIndex = newCatalogIndex;
+            var (catalogUrl, newCatalogIndex) = await NextHealthyUrl(catalogUrls, catalogIndex, CATALOGNAME);
+            if (catalogUrl == null)
+            {
+                Console.WriteLine("❌ All catalog services are down.");
+                return;
+            }
+            catalogIndex = newCatalogIndex;
 
-        var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/search/{topic}");
-        var results = JsonSerializer.Deserialize<List<BookSearchResult>>(await resp.Content.ReadAsStringAsync(),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-        if (results.Count == 0)
-            Console.WriteLine($"😕 No books under \"{topic}\".");
-        else
-        {
+            var resp = await httpClient.GetAsync($"{catalogUrl}/catalog/search/{topic}");
+            var results = JsonSerializer.Deserialize<List<BookSearchResult>>(await resp.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
 
-            searchCache[topic] = (results, DateTime.UtcNow);
-            PrintSearch(results);
+            if (results.Count == 0)
+                Console.WriteLine($"😕 No books under \"{topic}\".");
+            else
+            {
+                searchCache[topic] = (results, DateTime.UtcNow);
+                PrintSearch(results);
+            }
         }
     }
     else if (input == "5") break;
