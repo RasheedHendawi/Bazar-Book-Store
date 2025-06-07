@@ -13,7 +13,7 @@ namespace OrderServer.Services
         public OrderService(IHttpClientFactory httpClientFactory, IConfiguration config)
         {
             _httpClient = httpClientFactory.CreateClient();
-            _catalogUrl = "http://catalog-service:8080";
+            _catalogUrl = "http://catalog-1:8080";
         }
 
         public async Task<string> PurchaseAsync(int itemNumber)
@@ -26,12 +26,12 @@ namespace OrderServer.Services
                 var json = await response.Content.ReadAsStringAsync();
                 var item = JsonSerializer.Deserialize<CatalogItem>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (item == null || item.Quantity <= 0)
-                    throw new Exception("❌Item not found or out of stock.");
+                    throw new Exception("❌ Item not found or out of stock.");
 
                 var patch = new StringContent("");
                 var patchResp = await _httpClient.PostAsync($"{_catalogUrl}/catalog/update/decrement/{itemNumber}", patch);
                 if (!patchResp.IsSuccessStatusCode)
-                    throw new Exception("❌Failed to decrement stock.");
+                    throw new Exception("❌ Failed to decrement stock.");
 
                 var order = new Order
                 {
@@ -68,5 +68,6 @@ namespace OrderServer.Services
 
             return lastId + 1;
         }
+
     }
 }
